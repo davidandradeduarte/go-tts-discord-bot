@@ -27,7 +27,7 @@ func init() {
 }
 
 func main() {
-
+	
 	if token == "" {
 		log.Fatal("No token provided. Please provide the argument: -t <bot token>")
 		return

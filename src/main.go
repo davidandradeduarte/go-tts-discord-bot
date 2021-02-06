@@ -85,6 +85,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	
+	if  len(m.Content) < 6 {
+		return
+	} 
+	
 	if m.Content[:6] == "speak " {
 		resp, err := getVoiceFromText(m.Content[6:])
 

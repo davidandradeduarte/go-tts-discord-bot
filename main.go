@@ -1,11 +1,9 @@
 package main
 
 import (
-	"encoding/binary"
 	"flag"
 	"fmt"
 	"github.com/bwmarrin/dgvoice"
-	"io"
 	"log"
 	"net/url"
 	"os"
@@ -31,22 +29,15 @@ func init() {
 func main() {
 
 	if token == "" {
-		fmt.Println("No token provided. Please provide the argument: -t <bot token>")
+		log.Fatal("No token provided. Please provide the argument: -t <bot token>")
 		return
 		
 	}
-	// Load the sound file.
-	//err := loadSound()
-	//if err != nil {
-	//	fmt.Println("Error loading sound: ", err)
-	//	fmt.Println("Please copy $GOPATH/src/github.com/bwmarrin/examples/airhorn/airhorn.dca to this directory.")
-	//	return
-	//}
 	
 	// Create a new Discord session using the provided bot token.
 	dg, err := discordgo.New("Bot " + token)
 	if err != nil {
-		fmt.Println("error creating Discord session,", err)
+		log.Fatal("error creating Discord session,", err)
 		return
 	}
 
@@ -66,7 +57,7 @@ func main() {
 	// Open the websocket and begin listening.
 	err = dg.Open()
 	if err != nil {
-		fmt.Println("Error opening Discord session: ", err)
+		log.Fatal("Error opening Discord session: ", err)
 	}
 
 	// Wait here until CTRL-C or other term signal is received.
@@ -82,9 +73,7 @@ func main() {
 // This function will be called (due to AddHandler above) when the bot receives
 // the "ready" event from Discord.
 func ready(s *discordgo.Session, event *discordgo.Ready) {
-
-	// Set the playing status.
-	s.UpdateGameStatus(0, "!airhorn")
+	fmt.Println("Ready.")
 }
 
 // This function will be called (due to AddHandler above) every time a new
@@ -100,29 +89,32 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		resp, err := getVoiceFromText(m.Content[6:])
 
 		if err != nil {
-			fmt.Println(err.Error())
+			log.Println("error obtaining voice from text", err.Error())
+			return
 		}
 
-		s.ChannelMessageSend(m.ChannelID, resp.URL)
-		
-		// Download mp3
+		//s.ChannelMessageSend(m.ChannelID, resp.URL)
+
+		// Download mp3 file.
 		cmd := exec.Command("wget", resp.URL)
 
 		err = cmd.Run()
 
 		if err != nil {
-			log.Fatal(err)
+			log.Println("error downloading audio file", err.Error())
 			return
 		}
 
 		myUrl, err := url.Parse(resp.URL)
 		if err != nil {
-			log.Fatal(err)
+			log.Println("error parsing the audio url", err.Error())
+			return
 		}
+
+		file := path.Base(myUrl.Path)
 		
-		// TODO: convert mp3 to opus
-		c1 := exec.Command("ffmpeg", "-i", path.Base(myUrl.Path), "-f", "wav", "-")
-		
+		// Convert mp3 to opus.
+		c1 := exec.Command("ffmpeg", "-i", file, "-f", "wav", "-")
 		c2 := exec.Command("opusenc", "--bitrate", "256", "-", "output.opus")
 
 		c2.Stdin, _ = c1.StdoutPipe()
@@ -130,20 +122,26 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		_ = c2.Start()
 		_ = c1.Run()
 		_ = c2.Wait()
-		
-		// ffmpeg -i e7ad8c3b4325406e9d235618bf8d6ab9.mp3 -f wav - | opusenc --bitrate 256 - output.opus
 
+		// Delete downloaded file.
+		err = os.Remove(file)
+
+		if err != nil {
+			log.Println("could not delete the downloaded file: ", file, err.Error())
+			return
+		}
+		
 		// Find the channel that the message came from.
 		c, err := s.State.Channel(m.ChannelID)
 		if err != nil {
-			// Could not find channel.
+			log.Println("could not find the channel that the message came from", err.Error())
 			return
 		}
 
 		// Find the guild for that channel.
 		g, err := s.State.Guild(c.GuildID)
 		if err != nil {
-			// Could not find guild.
+			log.Println("could not find the guild for the channel", err.Error())
 			return
 		}
 
@@ -152,9 +150,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			if vs.UserID == m.Author.ID {
 				err = playSound(s, g.ID, vs.ChannelID)
 				if err != nil {
-					fmt.Println("Error playing sound:", err)
+					log.Println("error playing sound", err.Error())
 				}
-
 				return
 			}
 		}
@@ -176,26 +173,20 @@ func playSound(s *discordgo.Session, guildID, channelID string) (err error) {
 	// Start speaking.
 	vc.Speaking(true)
 
-	// Send the buffer data.
-	//for _, buff := range buffer {
-	//	vc.OpusSend <- buff
-	//}
-
-	// Start loop and attempt to play all files in the given folder
-	//fmt.Println("Reading Folder: ", ".")
-	//files, _ := ioutil.ReadDir(".")
-	//for _, f := range files {
-	//	fmt.Println("PlayAudioFile:", f.Name())
-	//	//s.UpdateStatus(0, f.Name())
-	//
-	//	
-	//}
 	dgvoice.PlayAudioFile(vc, "output.opus", make(chan bool))
+
+	// Delete opus file.
+	err = os.Remove("output.opus")
+
+	if err != nil {
+		log.Println("could not delete output.opus file: ", err.Error())
+		return
+	}
 
 	// Stop speaking
 	vc.Speaking(false)
 
-	// Sleep for a specificed amount of time before ending.
+	// Sleep for a specified amount of time before ending.
 	time.Sleep(250 * time.Millisecond)
 
 	// Disconnect from the provided voice channel.
@@ -214,52 +205,8 @@ func guildCreate(s *discordgo.Session, event *discordgo.GuildCreate) {
 
 	for _, channel := range event.Guild.Channels {
 		if channel.ID == event.Guild.ID {
-			//_, _ = s.ChannelMessageSend(channel.ID, "guild create func")
+			log.Println("a new guild joined", channel.ID)
 			return
 		}
-	}
-}
-
-// loadSound attempts to load an encoded sound file from disk.
-func loadSound() error {
-
-	file, err := os.Open("output.opus")
-	if err != nil {
-		fmt.Println("Error opening dca file :", err)
-		return err
-	}
-
-	var opuslen int16
-
-	for {
-		// Read opus frame length from dca file.
-		err = binary.Read(file, binary.LittleEndian, &opuslen)
-
-		// If this is the end of the file, just return.
-		if err == io.EOF || err == io.ErrUnexpectedEOF {
-			err := file.Close()
-			if err != nil {
-				return err
-			}
-			return nil
-		}
-
-		if err != nil {
-			fmt.Println("Error reading from dca file :", err)
-			return err
-		}
-
-		// Read encoded pcm from dca file.
-		InBuf := make([]byte, opuslen)
-		err = binary.Read(file, binary.LittleEndian, &InBuf)
-
-		// Should not be any end of file errors
-		if err != nil {
-			fmt.Println("Error reading from dca file :", err)
-			return err
-		}
-
-		// Append encoded pcm data to the buffer.
-		buffer = append(buffer, InBuf)
 	}
 }

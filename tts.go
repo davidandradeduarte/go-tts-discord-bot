@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 )
@@ -25,6 +26,8 @@ type Response struct {
 func getVoiceFromText(message string) (Response, error) {
 	formData := url.Values{"msg": {message}, "lang": {lang}, "source": {source}}
 
+	log.Println("Getting audio from text:", message)
+	
 	resp, err := http.PostForm(ttsURL, formData)
 
 	if err != nil {

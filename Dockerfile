@@ -1,6 +1,6 @@
 FROM golang AS build
 
-RUN apt-get update && apt install ffmpeg -y && apt-get install opus-tools -y
+RUN apt-get update && apt-get install ffmpeg -y && apt-get install opus-tools -y
 
 WORKDIR /src
 COPY src/ .

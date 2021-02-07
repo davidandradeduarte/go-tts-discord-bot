@@ -27,6 +27,7 @@ Currently, only Portuguese is supported.
 - [x] Add dependencies and go modules
 - [x] Create a Dockerfile to run inside a container
 - [ ] Add Dockerfile env variable for bot token
-- [ ] Migrate to Google TTS api.
+- [x] Migrate to Google TTS api.
+- [ ] Implement GCloud access token in docker container. 
 - [ ] Stay connected during X minutes. Disconnect if it doesn't receive any more requests.
 - [ ] Add support for multiple languages

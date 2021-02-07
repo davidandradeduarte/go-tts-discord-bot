@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/bwmarrin/dgvoice"
 	"log"
-	"net/url"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -90,8 +89,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	} 
 	
 	if m.Content[:6] == "speak " {
-		resp, err := getVoiceFromText(m.Content[6:])
+		//resp, err := getVoiceFromText(m.Content[6:])
 
+		resp, err := SynthesizeText(m.Content[6:])
 		if err != nil {
 			log.Println("error obtaining voice from text", err.Error())
 			return
@@ -100,22 +100,22 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		//s.ChannelMessageSend(m.ChannelID, resp.URL)
 
 		// Download mp3 file.
-		cmd := exec.Command("wget", resp.URL)
+		//cmd := exec.Command("wget", resp.URL)
+		//
+		//err = cmd.Run()
+		//
+		//if err != nil {
+		//	log.Println("error downloading audio file", err.Error())
+		//	return
+		//}
+		//
+		//myUrl, err := url.Parse(resp.URL)
+		//if err != nil {
+		//	log.Println("error parsing the audio url", err.Error())
+		//	return
+		//}
 
-		err = cmd.Run()
-
-		if err != nil {
-			log.Println("error downloading audio file", err.Error())
-			return
-		}
-
-		myUrl, err := url.Parse(resp.URL)
-		if err != nil {
-			log.Println("error parsing the audio url", err.Error())
-			return
-		}
-
-		file := path.Base(myUrl.Path)
+		file := path.Base(resp)
 		
 		// Convert mp3 to opus.
 		c1 := exec.Command("ffmpeg", "-i", file, "-f", "wav", "-")

@@ -12,20 +12,22 @@ Written in go for fun and speed :)
   to generate Google TTS _(Text-to-Speech)_ API key file.
 - Set the environment variable GOOGLE_APPLICATION_CREDENTIALS with the path to your key file.
 
-````bash
+```bash
 go run main.go tts.go -t "YOUR_BOT_TOKEN"
-````
+```
+
 or
-````bash
+
+```bash
 go build -o go-discord-bot-tts .
 ./go-discord-bot-tts -t "YOUR_BOT_TOKEN"
-````
+```
 
 ### Using Docker _(recommended)_
 
 - Edit the [Dockerfile](Dockerfile) to use your bot token.
 - Follow the instructions under [https://cloud.google.com/docs/authentication/production#passing_variable](https://cloud.google.com/docs/authentication/production#passing_variable)
-to generate Google TTS _(Text-to-Speech)_ API key file.
+  to generate Google TTS _(Text-to-Speech)_ API key file.
 - Paste the contents of your key in [gcloud-tts-api-key.json](gcloud-tts-api-key.json)
 
 ```bash
@@ -43,11 +45,12 @@ After it's done playing, disconnects.
 Currently, only Portuguese is supported.
 
 ## TODO
+
 - [x] Add dependencies and go modules
 - [x] Create a Dockerfile to run inside a container
-- [x] Migrate to Google TTS api.
-- [x] Implement GCloud access token in docker container. 
-- [ ] Stay connected during X minutes. Disconnect if it doesn't receive any more requests.
+- [x] Migrate to Google TTS api
+- [x] Implement GCloud access token in docker container
+- [ ] Stay connected during X minutes. Disconnect if it doesn't receive any more requests
 - [ ] Add support for multiple languages
 - [ ] Implement queues to avoid concurrency
 - [ ] API quota limit warning (stop gracefully)

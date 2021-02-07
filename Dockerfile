@@ -1,6 +1,6 @@
 FROM golang AS build
 
-RUN apt-get update && apt-get install ffmpeg -y && apt-get install opus-tools -y
+RUN apt-get update && apt-get install -y --no-install-recommends apt-utils && apt-get install libopus-dev -y && apt-get install ffmpeg -y && apt-get install opus-tools -y
 RUN mkdir /usr/gcloud
 
 COPY gcloud-tts-api-key.json /usr/.gcloud/

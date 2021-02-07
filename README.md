@@ -1,9 +1,9 @@
 # Text to Speech Discord Bot
 
 Discord bot for tts that auto plays after a `speak` command message is sent.  
-It uses opus audio files and a free tts php api (will migrate to google later).
+It uses opus audio files and google tts api.
 
-Written in go for fun and the speed :)
+Written in go for fun and speed :)
 
 ## Running it
 

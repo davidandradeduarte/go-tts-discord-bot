@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/bwmarrin/dgvoice"
 	"log"
 	"os"
 	"os/exec"
@@ -11,6 +10,8 @@ import (
 	"path"
 	"syscall"
 	"time"
+
+	"github.com/bwmarrin/dgvoice"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -26,13 +27,13 @@ func init() {
 }
 
 func main() {
-	
+
 	if token == "" {
 		log.Fatal("No token provided. Please provide the argument: -t <bot token>")
 		return
-		
+
 	}
-	
+
 	// Create a new Discord session using the provided bot token.
 	dg, err := discordgo.New("Bot " + token)
 	if err != nil {
@@ -83,11 +84,11 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
-	
-	if  len(m.Content) < 6 {
+
+	if len(m.Content) < 6 {
 		return
-	} 
-	
+	}
+
 	if m.Content[:6] == "speak " {
 		//resp, err := getVoiceFromText(m.Content[6:])
 
@@ -97,26 +98,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			return
 		}
 
-		//s.ChannelMessageSend(m.ChannelID, resp.URL)
-
-		// Download mp3 file.
-		//cmd := exec.Command("wget", resp.URL)
-		//
-		//err = cmd.Run()
-		//
-		//if err != nil {
-		//	log.Println("error downloading audio file", err.Error())
-		//	return
-		//}
-		//
-		//myUrl, err := url.Parse(resp.URL)
-		//if err != nil {
-		//	log.Println("error parsing the audio url", err.Error())
-		//	return
-		//}
-
 		file := path.Base(resp)
-		
+
 		// Convert mp3 to opus.
 		c1 := exec.Command("ffmpeg", "-i", file, "-f", "wav", "-")
 		c2 := exec.Command("opusenc", "--bitrate", "256", "-", "output.opus")
@@ -134,7 +117,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			log.Println("could not delete the downloaded file: ", file, err.Error())
 			return
 		}
-		
+
 		// Find the channel that the message came from.
 		c, err := s.State.Channel(m.ChannelID)
 		if err != nil {

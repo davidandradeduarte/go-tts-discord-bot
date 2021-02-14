@@ -54,3 +54,4 @@ Currently, only Portuguese is supported.
 - [ ] Add support for multiple languages
 - [ ] Implement queues to avoid concurrency
 - [ ] API quota limit warning (stop gracefully)
+- [ ] Add tests

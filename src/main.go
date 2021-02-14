@@ -73,6 +73,7 @@ func main() {
 // the "ready" event from Discord.
 func ready(s *discordgo.Session, event *discordgo.Ready) {
 	fmt.Println("Ready.")
+	s.UpdateGameStatus(0, "speak")
 }
 
 // This function will be called (due to AddHandler above) every time a new

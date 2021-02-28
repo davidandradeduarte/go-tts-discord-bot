@@ -1,5 +1,7 @@
 # Text to Speech Discord Bot
 
+![Pipeline](https://github.com/davidandradeduarte/go-tts-discord-bot/actions/workflows/pipeline.yml/badge.svg)
+
 Discord bot for tts that autoplays after a `speak` command message is sent.  
 It uses opus audio files and google tts api.
 

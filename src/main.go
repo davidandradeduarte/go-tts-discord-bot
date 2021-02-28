@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path"
+	"sync"
 	"syscall"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 // Variables used for command line parameters
 var token string
 var buffer = make([][]byte, 0)
+var lock sync.Mutex
 
 func init() {
 
@@ -79,6 +81,9 @@ func ready(s *discordgo.Session, event *discordgo.Ready) {
 // This function will be called (due to AddHandler above) every time a new
 // message is created on any channel that the authenticated bot has access to.
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+
+	lock.Lock()
+	defer lock.Unlock()
 
 	// Ignore all messages created by the bot itself
 	if m.Author.ID == s.State.User.ID {

@@ -20,6 +20,7 @@ import (
 var token string
 var buffer = make([][]byte, 0)
 var lock sync.Mutex
+var threads int = 0
 
 func init() {
 
@@ -82,6 +83,8 @@ func ready(s *discordgo.Session, event *discordgo.Ready) {
 // message is created on any channel that the authenticated bot has access to.
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
+	threads++
+
 	lock.Lock()
 	defer lock.Unlock()
 
@@ -96,6 +99,11 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	if m.Content[:6] == "speak " {
 		//resp, err := getVoiceFromText(m.Content[6:])
+
+		if m.Content[6:] == "" {
+			threads--
+			return
+		}
 
 		resp, err := SynthesizeText(m.Content[6:])
 		if err != nil {
@@ -181,8 +189,12 @@ func playSound(s *discordgo.Session, guildID, channelID string) (err error) {
 	// Sleep for a specified amount of time before ending.
 	time.Sleep(250 * time.Millisecond)
 
-	// Disconnect from the provided voice channel.
-	vc.Disconnect()
+	if threads <= 1 {
+		// Disconnect from the provided voice channel.
+		vc.Disconnect()
+	}
+
+	threads--
 
 	return nil
 }

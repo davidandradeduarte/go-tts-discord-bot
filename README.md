@@ -43,15 +43,3 @@ to your current voice channel and will play your message.
 After it's done playing, disconnects.
 
 Currently, only Portuguese is supported.
-
-## TODO
-
-- [x] Add dependencies and go modules
-- [x] Create a Dockerfile to run inside a container
-- [x] Migrate to Google TTS api
-- [x] Implement GCloud access token in docker container
-- [ ] Stay connected during X minutes. Disconnect if it doesn't receive any more requests
-- [ ] Add support for multiple languages
-- [ ] Implement queues to avoid concurrency
-- [ ] API quota limit warning (stop gracefully)
-- [ ] Add tests

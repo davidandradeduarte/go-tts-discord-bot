@@ -111,7 +111,7 @@ func main() {
 // the "ready" event from Discord.
 func ready(s *discordgo.Session, event *discordgo.Ready) {
 	log.Info("Ready.")
-	s.UpdateGameStatus(0, "speak")
+	s.UpdateListeningStatus("speak")
 }
 
 // This function will be called (due to AddHandler above) every time a new
@@ -128,13 +128,60 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	if len(m.Content) < 6 {
+	if len(m.Content) < 5 {
 		return
 	}
 
-	if m.Content[:6] == "speak " {
-		msg := m.Content[6:]
+	if m.Content[:5] == "speak" {
+		msg := m.Content[5:]
 		if msg == "" {
+			err := s.ChannelTyping(m.ChannelID)
+			if err != nil {
+				threads--
+				log.Error("error triggering typing", err.Error())
+				return
+			}
+
+			s.ChannelMessageSend(m.ChannelID, "speak <your message>")
+
+			threads--
+			return
+		}
+
+		// Find the channel that the message came from.
+		c, err := s.State.Channel(m.ChannelID)
+		if err != nil {
+			threads--
+			log.Error("could not find the channel that the message came from", err.Error())
+			return
+		}
+
+		// Find the guild for that channel.
+		g, err := s.State.Guild(c.GuildID)
+		if err != nil {
+			threads--
+			log.Error("could not find the guild for the channel", err.Error())
+			return
+		}
+
+		connected := false
+		for _, vs := range g.VoiceStates {
+			if vs.UserID == m.Author.ID {
+				connected = true
+			}
+		}
+
+		if !connected {
+			err := s.ChannelTyping(m.ChannelID)
+			if err != nil {
+				threads--
+				log.Error("error triggering typing", err.Error())
+				return
+			}
+
+			log.Warn("not connected to a voice channel")
+			s.ChannelMessageSend(m.ChannelID, "not connected to a voice channel")
+
 			threads--
 			return
 		}
@@ -142,6 +189,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		log.Info("received text:", msg)
 		resp, err := SynthesizeText(msg)
 		if err != nil {
+			threads--
 			log.Error("error obtaining voice from text", err.Error())
 			return
 		}
@@ -162,21 +210,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		err = os.Remove(file)
 
 		if err != nil {
+			threads--
 			log.Error("could not delete the downloaded file: ", file, err.Error())
-			return
-		}
-
-		// Find the channel that the message came from.
-		c, err := s.State.Channel(m.ChannelID)
-		if err != nil {
-			log.Error("could not find the channel that the message came from", err.Error())
-			return
-		}
-
-		// Find the guild for that channel.
-		g, err := s.State.Guild(c.GuildID)
-		if err != nil {
-			log.Error("could not find the guild for the channel", err.Error())
 			return
 		}
 
@@ -185,11 +220,15 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			if vs.UserID == m.Author.ID {
 				err = playSound(s, g.ID, vs.ChannelID)
 				if err != nil {
+					threads--
 					log.Error("error playing sound", err.Error())
+					return
 				}
 				return
 			}
 		}
+
+		threads--
 	}
 }
 
@@ -215,7 +254,7 @@ func playSound(s *discordgo.Session, guildID, channelID string) (err error) {
 
 	if err != nil {
 		log.Error("could not delete output.opus file: ", err.Error())
-		return
+		return err
 	}
 
 	// Stop speaking
@@ -228,8 +267,6 @@ func playSound(s *discordgo.Session, guildID, channelID string) (err error) {
 		// Disconnect from the provided voice channel.
 		vc.Disconnect()
 	}
-
-	threads--
 
 	return nil
 }

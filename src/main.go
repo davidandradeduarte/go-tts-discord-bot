@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
+	"io"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -11,6 +11,9 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	rotatelogs "github.com/lestrrat/go-file-rotatelogs"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/bwmarrin/dgvoice"
 	"github.com/bwmarrin/discordgo"
@@ -28,7 +31,39 @@ func init() {
 	flag.Parse()
 }
 
+func initiLogger() {
+
+	Formatter := new(log.TextFormatter)
+	Formatter.TimestampFormat = "02-01-2006 15:04:05"
+	Formatter.FullTimestamp = true
+	Formatter.ForceColors = true
+
+	log.SetFormatter(Formatter)
+
+	path := "logs/"
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		os.Mkdir(path, os.ModePerm)
+	}
+
+	writer, err := rotatelogs.New(
+		fmt.Sprintf("%s%s.log", path, "%Y-%m-%d"),
+		rotatelogs.WithMaxAge(time.Hour*72),
+		rotatelogs.WithRotationTime(time.Hour*24),
+	)
+	if err != nil {
+		log.Fatalf("Failed to Initialize Log File %s", err)
+	}
+
+	mw := io.MultiWriter(os.Stdout, writer)
+	log.SetOutput(mw)
+
+	return
+}
+
 func main() {
+
+	initiLogger()
 
 	if token == "" {
 		log.Fatal("No token provided. Please provide the argument: -t <bot token>")
@@ -63,7 +98,7 @@ func main() {
 	}
 
 	// Wait here until CTRL-C or other term signal is received.
-	fmt.Println("TTS Bot is now running.  Press CTRL-C to exit.")
+	log.Info("Bot is now running.  Press CTRL-C to exit.")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
@@ -75,7 +110,7 @@ func main() {
 // This function will be called (due to AddHandler above) when the bot receives
 // the "ready" event from Discord.
 func ready(s *discordgo.Session, event *discordgo.Ready) {
-	fmt.Println("Ready.")
+	log.Info("Ready.")
 	s.UpdateGameStatus(0, "speak")
 }
 
@@ -98,16 +133,16 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	if m.Content[:6] == "speak " {
-		//resp, err := getVoiceFromText(m.Content[6:])
-
-		if m.Content[6:] == "" {
+		msg := m.Content[6:]
+		if msg == "" {
 			threads--
 			return
 		}
 
-		resp, err := SynthesizeText(m.Content[6:])
+		log.Info("received text:", msg)
+		resp, err := SynthesizeText(msg)
 		if err != nil {
-			log.Println("error obtaining voice from text", err.Error())
+			log.Error("error obtaining voice from text", err.Error())
 			return
 		}
 
@@ -127,21 +162,21 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		err = os.Remove(file)
 
 		if err != nil {
-			log.Println("could not delete the downloaded file: ", file, err.Error())
+			log.Error("could not delete the downloaded file: ", file, err.Error())
 			return
 		}
 
 		// Find the channel that the message came from.
 		c, err := s.State.Channel(m.ChannelID)
 		if err != nil {
-			log.Println("could not find the channel that the message came from", err.Error())
+			log.Error("could not find the channel that the message came from", err.Error())
 			return
 		}
 
 		// Find the guild for that channel.
 		g, err := s.State.Guild(c.GuildID)
 		if err != nil {
-			log.Println("could not find the guild for the channel", err.Error())
+			log.Error("could not find the guild for the channel", err.Error())
 			return
 		}
 
@@ -150,7 +185,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			if vs.UserID == m.Author.ID {
 				err = playSound(s, g.ID, vs.ChannelID)
 				if err != nil {
-					log.Println("error playing sound", err.Error())
+					log.Error("error playing sound", err.Error())
 				}
 				return
 			}
@@ -179,7 +214,7 @@ func playSound(s *discordgo.Session, guildID, channelID string) (err error) {
 	err = os.Remove("output.opus")
 
 	if err != nil {
-		log.Println("could not delete output.opus file: ", err.Error())
+		log.Error("could not delete output.opus file: ", err.Error())
 		return
 	}
 
@@ -187,7 +222,7 @@ func playSound(s *discordgo.Session, guildID, channelID string) (err error) {
 	vc.Speaking(false)
 
 	// Sleep for a specified amount of time before ending.
-	time.Sleep(250 * time.Millisecond)
+	time.Sleep(1 * time.Second)
 
 	if threads <= 1 {
 		// Disconnect from the provided voice channel.
@@ -209,7 +244,7 @@ func guildCreate(s *discordgo.Session, event *discordgo.GuildCreate) {
 
 	for _, channel := range event.Guild.Channels {
 		if channel.ID == event.Guild.ID {
-			log.Println("a new guild joined", channel.ID)
+			log.Info("a new guild joined", channel.ID)
 			return
 		}
 	}

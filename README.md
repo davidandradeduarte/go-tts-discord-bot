@@ -1,6 +1,6 @@
 # Text to Speech Discord Bot
 
-![Pipeline](https://github.com/davidandradeduarte/go-tts-discord-bot/actions/workflows/pipeline.yml/badge.svg)
+![Pipeline](https://github.com/davidandradeduarte/tts-discord-bot/actions/workflows/pipeline.yml/badge.svg)
 
 Discord bot for tts that autoplays after a `speak` command message is sent.  
 It uses opus audio files and google tts api.
@@ -21,8 +21,8 @@ go run main.go tts.go -t "YOUR_BOT_TOKEN"
 or
 
 ```bash
-go build -o go-discord-bot-tts .
-./go-discord-bot-tts -t "YOUR_BOT_TOKEN"
+go build -o tts-discord-bot .
+./tts-discord-bot -t "YOUR_BOT_TOKEN"
 ```
 
 ### Using Docker _(recommended)_
@@ -33,8 +33,8 @@ go build -o go-discord-bot-tts .
 - Paste the contents of your key in [gcloud-tts-api-key.json](gcloud-tts-api-key.json)
 
 ```bash
-docker build -t local/go-tts-discord-bot -f Dockerfile --no-cache .
-docker run local/go-tts-discord-bot
+docker build -t local/tts-discord-bot -f Dockerfile --no-cache .
+docker run local/tts-discord-bot
 ```
 
 ## Usage

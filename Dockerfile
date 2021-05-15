@@ -10,6 +10,6 @@ WORKDIR /src
 COPY src/ .
 RUN go mod download
 
-RUN go build -o go-discord-bot-tts .
+RUN go build -o tts-discord-bot .
 
-ENTRYPOINT ["./go-discord-bot-tts", "-t", "YOUR_BOT_TOKEN"]
+ENTRYPOINT ["./tts-discord-bot", "-t", "YOUR_BOT_TOKEN"]

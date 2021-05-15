@@ -1,4 +1,4 @@
-module github/go-tts-discord-bot
+module github/tts-discord-bot
 
 go 1.15
 

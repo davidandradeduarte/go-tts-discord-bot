@@ -9,26 +9,29 @@ Written in go for fun and speed :)
 
 ## Running it
 
-- Install [ffmpeg](https://ffmpeg.org/download.html) and [opus-tools](https://opus-codec.org/downloads/).
 - Follow the instructions under [https://cloud.google.com/docs/authentication/production#passing_variable](https://cloud.google.com/docs/authentication/production#passing_variable)
-  to generate Google TTS _(Text-to-Speech)_ API key file.
-- Set the environment variable GOOGLE_APPLICATION_CREDENTIALS with the path to your key file.
+  to generate a Google TTS _(Text-to-Speech)_ API key file
 
 ### With Docker _(recommended)_
 
-- Edit the [Dockerfile](Dockerfile) to use your bot token.
+- Edit the [Dockerfile](Dockerfile) to use your bot token
 - Follow the instructions under [https://cloud.google.com/docs/authentication/production#passing_variable](https://cloud.google.com/docs/authentication/production#passing_variable)
-  to generate Google TTS _(Text-to-Speech)_ API key file.
+  to generate Google TTS _(Text-to-Speech)_ API key file
 - Paste the contents of your key in [gcloud-tts-api-key.json](gcloud-tts-api-key.json)
 
 ```bash
 make docker
 # or
-docker build -t local/tts-discord-bot -f Dockerfile --no-cache .
-docker run local/tts-discord-bot
+docker build -t tts-discord-bot -f Dockerfile --no-cache .
+docker run tts-discord-bot
 ```
 
 ### Without Docker
+
+- Install [ffmpeg](https://ffmpeg.org/download.html)
+- Install [opus-tools](https://opus-codec.org/downloads/)
+- Set the environment variable GOOGLE_APPLICATION_CREDENTIALS with the path to your key file
+
 ```bash
 make run
 # or

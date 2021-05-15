@@ -14,17 +14,6 @@ Written in go for fun and speed :)
   to generate Google TTS _(Text-to-Speech)_ API key file.
 - Set the environment variable GOOGLE_APPLICATION_CREDENTIALS with the path to your key file.
 
-```bash
-go run main.go tts.go -t "YOUR_BOT_TOKEN"
-```
-
-or
-
-```bash
-go build -o tts-discord-bot .
-./tts-discord-bot -t "YOUR_BOT_TOKEN"
-```
-
 ### Using Docker _(recommended)_
 
 - Edit the [Dockerfile](Dockerfile) to use your bot token.
@@ -35,6 +24,22 @@ go build -o tts-discord-bot .
 ```bash
 docker build -t local/tts-discord-bot -f Dockerfile --no-cache .
 docker run local/tts-discord-bot
+```
+
+### Using Makefile
+```bash
+make
+```
+
+### Run
+```bash
+go run main.go tts.go -t "YOUR_BOT_TOKEN"
+```
+
+### Build executable and run
+```bash
+go build -o tts-discord-bot .
+./tts-discord-bot -t "YOUR_BOT_TOKEN"
 ```
 
 ## Usage

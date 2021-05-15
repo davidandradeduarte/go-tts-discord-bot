@@ -21,9 +21,8 @@ import (
 
 // Variables used for command line parameters
 var token string
-var buffer = make([][]byte, 0)
 var lock sync.Mutex
-var threads int = 0
+var messages int = 0
 
 func init() {
 
@@ -57,8 +56,6 @@ func initiLogger() {
 
 	mw := io.MultiWriter(os.Stdout, writer)
 	log.SetOutput(mw)
-
-	return
 }
 
 func main() {
@@ -118,7 +115,10 @@ func ready(s *discordgo.Session, event *discordgo.Ready) {
 // message is created on any channel that the authenticated bot has access to.
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
-	threads++
+	messages++
+	defer func() {
+		messages--
+	}()
 
 	lock.Lock()
 	defer lock.Unlock()
@@ -137,21 +137,18 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if msg == "" {
 			err := s.ChannelTyping(m.ChannelID)
 			if err != nil {
-				threads--
 				log.Error("error triggering typing", err.Error())
 				return
 			}
 
 			s.ChannelMessageSend(m.ChannelID, "speak <your message>")
 
-			threads--
 			return
 		}
 
 		// Find the channel that the message came from.
 		c, err := s.State.Channel(m.ChannelID)
 		if err != nil {
-			threads--
 			log.Error("could not find the channel that the message came from", err.Error())
 			return
 		}
@@ -159,7 +156,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		// Find the guild for that channel.
 		g, err := s.State.Guild(c.GuildID)
 		if err != nil {
-			threads--
 			log.Error("could not find the guild for the channel", err.Error())
 			return
 		}
@@ -174,7 +170,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if !connected {
 			err := s.ChannelTyping(m.ChannelID)
 			if err != nil {
-				threads--
 				log.Error("error triggering typing", err.Error())
 				return
 			}
@@ -182,14 +177,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			log.Warn("not connected to a voice channel")
 			s.ChannelMessageSend(m.ChannelID, "not connected to a voice channel")
 
-			threads--
 			return
 		}
 
 		log.Info("received text:", msg)
 		resp, err := SynthesizeText(msg)
 		if err != nil {
-			threads--
 			log.Error("error obtaining voice from text", err.Error())
 			return
 		}
@@ -210,7 +203,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		err = os.Remove(file)
 
 		if err != nil {
-			threads--
 			log.Error("could not delete the downloaded file: ", file, err.Error())
 			return
 		}
@@ -218,27 +210,29 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		// Look for the message sender in that guild's current voice states.
 		for _, vs := range g.VoiceStates {
 			if vs.UserID == m.Author.ID {
-				err = playSound(s, g.ID, vs.ChannelID)
+				vc, err := playSound(s, g.ID, vs.ChannelID)
+
+				if messages-1 == 0 {
+					vc.Disconnect()
+				}
+
 				if err != nil {
-					threads--
 					log.Error("error playing sound", err.Error())
 					return
 				}
 				return
 			}
 		}
-
-		threads--
 	}
 }
 
 // playSound plays the current buffer to the provided channel.
-func playSound(s *discordgo.Session, guildID, channelID string) (err error) {
+func playSound(s *discordgo.Session, guildID, channelID string) (voice *discordgo.VoiceConnection, err error) {
 
 	// Join the provided voice channel.
 	vc, err := s.ChannelVoiceJoin(guildID, channelID, false, true)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Sleep for a specified amount of time before playing the sound
@@ -254,21 +248,16 @@ func playSound(s *discordgo.Session, guildID, channelID string) (err error) {
 
 	if err != nil {
 		log.Error("could not delete output.opus file: ", err.Error())
-		return err
+		return vc, err
 	}
 
 	// Stop speaking
 	vc.Speaking(false)
 
-	// Sleep for a specified amount of time before ending.
+	// Sleep for a specified amount of time before next message.
 	time.Sleep(1 * time.Second)
 
-	if threads <= 1 {
-		// Disconnect from the provided voice channel.
-		vc.Disconnect()
-	}
-
-	return nil
+	return vc, nil
 }
 
 // This function will be called (due to AddHandler above) every time a new

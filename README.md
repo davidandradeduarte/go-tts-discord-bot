@@ -15,8 +15,6 @@ Written in go for fun and speed :)
 ### With Docker _(recommended)_
 
 - Edit the [Dockerfile](Dockerfile) to use your bot token
-- Follow the instructions under [https://cloud.google.com/docs/authentication/production#passing_variable](https://cloud.google.com/docs/authentication/production#passing_variable)
-  to generate Google TTS _(Text-to-Speech)_ API key file
 - Paste the contents of your key in [gcloud-tts-api-key.json](gcloud-tts-api-key.json)
 
 ```bash

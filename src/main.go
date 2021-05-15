@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -132,17 +133,15 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
+	if len(m.Content) > 500 {
+		SendMessage("can not send more than 500 characters", m.ChannelID, s)
+		return
+	}
+
 	if m.Content[:5] == "speak" {
 		msg := m.Content[5:]
-		if msg == "" {
-			err := s.ChannelTyping(m.ChannelID)
-			if err != nil {
-				log.Error("error triggering typing", err.Error())
-				return
-			}
-
-			s.ChannelMessageSend(m.ChannelID, "speak <your message>")
-
+		if strings.TrimSpace(msg) == "" {
+			SendMessage("speak <your message>", m.ChannelID, s)
 			return
 		}
 
@@ -168,15 +167,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 
 		if !connected {
-			err := s.ChannelTyping(m.ChannelID)
-			if err != nil {
-				log.Error("error triggering typing", err.Error())
-				return
-			}
-
 			log.Warn("not connected to a voice channel")
-			s.ChannelMessageSend(m.ChannelID, "not connected to a voice channel")
-
+			SendMessage("not connected to a voice channel", m.ChannelID, s)
 			return
 		}
 
@@ -274,4 +266,14 @@ func guildCreate(s *discordgo.Session, event *discordgo.GuildCreate) {
 			return
 		}
 	}
+}
+
+func SendMessage(message string, channelId string, s *discordgo.Session) {
+	err := s.ChannelTyping(channelId)
+	if err != nil {
+		log.Error("error triggering typing", err.Error())
+		return
+	}
+
+	s.ChannelMessageSend(channelId, message)
 }
